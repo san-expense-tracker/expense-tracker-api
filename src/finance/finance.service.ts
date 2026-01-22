@@ -3,20 +3,31 @@ import { CreateFinanceDto } from './schema/finance.schema';
 import { FinanceRepository } from './finance.repository';
 import { FinanceDocument } from './schema/finance.mongooschema';
 
-
 @Injectable()
 export class FinanceService {
-  constructor(private readonly financeRepository: FinanceRepository) { }
+  constructor(private readonly financeRepository: FinanceRepository) {}
   addFinance(finance: CreateFinanceDto): Promise<FinanceDocument> {
     return this.financeRepository.createFinance(finance);
   }
-
+  getTransactions(filters: {
+    search?: string;
+    type?: 'INCOME' | 'EXPENSE';
+    category?: string;
+    page: number;
+    limit: number;
+    sort?: 'asc' | 'desc';
+  }) {
+    return this.financeRepository.getTransactions(filters);
+  }
   findAll() {
     return this.financeRepository.findAll();
   }
 
   async update(id: string, updateFinanceDto: any): Promise<FinanceDocument> {
-    const updatedFinance = await this.financeRepository.update(id, updateFinanceDto);
+    const updatedFinance = await this.financeRepository.update(
+      id,
+      updateFinanceDto,
+    );
     if (!updatedFinance) {
       throw new NotFoundException(`Finance document with ID ${id} not found`);
     }

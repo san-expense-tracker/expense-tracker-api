@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { FinanceService } from './finance.service';
 import { CreateFinanceDto } from './schema/finance.schema';
 import { FinanceDocument } from './schema/finance.mongooschema';
@@ -11,7 +20,24 @@ export class FinanceController {
   addFinance(@Body() finance: CreateFinanceDto) {
     return this.financeService.addFinance(finance);
   }
-
+  @Get()
+  getTransactions(
+    @Query('search') search?: string,
+    @Query('type') type?: 'INCOME' | 'EXPENSE',
+    @Query('category') category?: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('sort') sort: 'asc' | 'desc' = 'desc',
+  ) {
+    return this.financeService.getTransactions({
+      search,
+      type,
+      category,
+      page,
+      limit,
+      sort,
+    });
+  }
   @Get()
   findAll() {
     return this.financeService.findAll();
@@ -19,19 +45,24 @@ export class FinanceController {
 
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateFinanceDto: any) {
-    const updatedFinance = await this.financeService.update(id, updateFinanceDto);
+    const updatedFinance = await this.financeService.update(
+      id,
+      updateFinanceDto,
+    );
     return {
-      message: "Finance updated successfully",
-      data: updatedFinance
+      message: 'Finance updated successfully',
+      data: updatedFinance,
     };
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string): Promise<{ message: string, data: FinanceDocument }> {
+  async remove(
+    @Param('id') id: string,
+  ): Promise<{ message: string; data: FinanceDocument }> {
     const deletedFinance = await this.financeService.remove(id);
     return {
-      message: "Finance deleted successfully",
-      data: deletedFinance
+      message: 'Finance deleted successfully',
+      data: deletedFinance,
     };
   }
 }

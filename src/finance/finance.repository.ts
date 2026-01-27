@@ -21,6 +21,7 @@ export class FinanceRepository {
     page: number;
     limit: number;
     sort?: 'asc' | 'desc';
+    title?: string;
   }) {
     const query: any = {};
 
@@ -39,6 +40,10 @@ export class FinanceRepository {
     if (filters?.category) {
       query.category = filters?.category;
     }
+    //title
+    if (filters?.title) {
+      query.title = filters?.title;
+    }
     //pagenation
     const skip = (filters.page - 1) * filters.limit;
 
@@ -46,7 +51,7 @@ export class FinanceRepository {
     const sortOption: any = { date: filters?.sort === 'asc' ? 1 : -1 };
 
     // Total count
-    const total = await this.financeModel.countDocuments(query);
+    const total = await this.financeModel.countDocuments({});
 
     // Transactions
     const transactions = await this.financeModel
@@ -66,6 +71,65 @@ export class FinanceRepository {
       },
     };
   }
+  async getTransactionsCursor(filters: {
+    cursor?: string;
+    search?: string;
+    type?: 'INCOME' | 'EXPENSE';
+    category?: string;
+    limit?: number;
+    sort?: 'asc' | 'desc';
+  }) {
+    const query: any = {};
+
+    // 🔍 Search
+    if (filters.search) {
+      query.$or = [
+        { title: { $regex: filters.search, $options: 'i' } },
+        { category: { $regex: filters.search, $options: 'i' } },
+      ];
+    }
+
+    if (filters.type) query.type = filters.type;
+    if (filters.category) query.category = filters.category;
+
+    const limit =
+      typeof filters.limit === 'number' && filters.limit > 0
+        ? filters.limit
+        : 10;
+
+    const sortOrder = filters.sort === 'asc' ? 1 : -1;
+
+    if (filters.cursor) {
+      query.date =
+        sortOrder === -1
+          ? { $lt: new Date(filters.cursor) }
+          : { $gt: new Date(filters.cursor) };
+    }
+
+    const transactions = await this.financeModel
+      .find(query)
+      .sort({ date: sortOrder })
+      .limit(limit + 1)
+      .exec();
+
+    let nextCursor: string | null = null;
+
+    if (transactions.length > limit) {
+      const lastItem = transactions.pop();
+      nextCursor = lastItem!.date.toISOString();
+    }
+
+    const total = await this.financeModel.countDocuments({});
+
+    return {
+      data: transactions,
+      meta: {
+        total,
+        nextCursor,
+      },
+    };
+  }
+
   async findAll(): Promise<FinanceDocument[]> {
     return this.financeModel.find().exec();
   }

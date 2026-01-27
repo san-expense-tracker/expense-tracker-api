@@ -14,7 +14,7 @@ import { FinanceDocument } from './schema/finance.mongooschema';
 
 @Controller('finance')
 export class FinanceController {
-  constructor(private readonly financeService: FinanceService) { }
+  constructor(private readonly financeService: FinanceService) {}
 
   @Post()
   addFinance(@Body() finance: CreateFinanceDto) {
@@ -28,6 +28,7 @@ export class FinanceController {
     @Query('page') page = 1,
     @Query('limit') limit = 10,
     @Query('sort') sort: 'asc' | 'desc' = 'desc',
+    @Query('title') title?: string,
   ) {
     return this.financeService.getTransactions({
       search,
@@ -36,6 +37,7 @@ export class FinanceController {
       page,
       limit,
       sort,
+      title,
     });
   }
   @Get()
@@ -43,6 +45,29 @@ export class FinanceController {
     return this.financeService.findAll();
   }
 
+  @Get('transactions')
+  getTransactionsCursor(
+    @Query('cursor') cursor?: string,
+    @Query('search') search?: string,
+    @Query('type') type?: 'INCOME' | 'EXPENSE',
+    @Query('category') category?: string,
+    @Query('sort') sort?: 'asc' | 'desc',
+    @Query('limit') limit?: string,
+  ) {
+    return this.financeService.getTransactionsCursor({
+      cursor,
+      search,
+      type,
+      category,
+      sort,
+      limit: limit ? Number(limit) : undefined, // ✅ FIX
+    });
+  }
+
+  @Get()
+  fetchTransactions() {
+    return this.financeService.findAll();
+  }
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateFinanceDto: any) {
     const updatedFinance = await this.financeService.update(

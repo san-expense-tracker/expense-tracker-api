@@ -16,8 +16,23 @@ export class FinanceService {
     page: number;
     limit: number;
     sort?: 'asc' | 'desc';
+    title?: string;
   }) {
     return this.financeRepository.getTransactions(filters);
+  }
+
+  getTransactionsCursor(filters: {
+    cursor?: string;
+    search?: string;
+    type?: 'INCOME' | 'EXPENSE';
+    category?: string;
+    limit?: number;
+    sort?: 'asc' | 'desc';
+  }): Promise<{
+    data: FinanceDocument[];
+    meta: { total: number; nextCursor: string | null };
+  }> {
+    return this.financeRepository.getTransactionsCursor(filters);
   }
   findAll() {
     return this.financeRepository.findAll();
